@@ -67,12 +67,7 @@
             <version>5.2.5</version>
         </dependency>
 
-        <!-- YAML 处理 -->
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>2.2</version>
-        </dependency>
+        <!-- YAML 处理 (Spring Boot 3.x 已内置，无需单独声明) -->
 
         <!-- JSON -->
         <dependency>
@@ -123,7 +118,9 @@ package com.configgen;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.event.EventListener;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -132,6 +129,29 @@ public class ConfigGenApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(ConfigGenApplication.class, args);
+    }
+
+    // 实现"启动后自动打开浏览器"
+    @EventListener(ApplicationReadyEvent.class)
+    public void openBrowser() {
+        String port = System.getProperty("server.port", "8080");
+        String url = "http://localhost:" + port;
+        System.out.println("========================================");
+        System.out.println("ConfigGen 已启动: " + url);
+        System.out.println("正在打开浏览器...");
+        System.out.println("========================================");
+        try {
+            String os = System.getProperty("os.name").toLowerCase();
+            if (os.contains("mac")) {
+                Runtime.getRuntime().exec("open " + url);
+            } else if (os.contains("windows")) {
+                Runtime.getRuntime().exec("cmd /c start " + url);
+            } else {
+                Runtime.getRuntime().exec("xdg-open " + url);
+            }
+        } catch (Exception e) {
+            System.out.println("请手动打开浏览器访问: " + url);
+        }
     }
 
     @Bean
