@@ -70,7 +70,6 @@
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>5.2.5</version>
-            <version>5.2.5</version>
         </dependency>
 
         <!-- YAML 处理 (Spring Boot 3.x 已内置，无需单独声明) -->
@@ -1348,7 +1347,7 @@ body {
 **src/main/resources/static/js/app.js:**
 
 ```javascript
-const { createApp, ref, computed, watch, nextTick } = Vue;
+const { createApp, ref, computed, watch, nextTick, onMounted } = Vue;
 const { ElMessage } = ElementPlus;
 
 const app = createApp({
