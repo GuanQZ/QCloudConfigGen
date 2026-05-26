@@ -67,6 +67,36 @@
 
 ## 三、功能设计
 
+### 3.0 API 设计
+
+**基础路径：** `/api`
+
+| 方法 | 路径 | 说明 | 请求体 | 响应 |
+|------|------|------|--------|------|
+| GET | `/templates` | 获取内置模板列表 | - | `[{id, name, content}]` |
+| GET | `/templates/{id}` | 获取内置模板内容 | - | `{id, name, content}` |
+| POST | `/templates/parse` | 解析模板，提取占位符 | `{content}` | `{placeholders: ["port", "domain"]}` |
+| POST | `/excel/parse` | 解析 Excel，返回字段与数据 | FormData (file) | `{columns, rows, filename}` |
+| POST | `/generate/preview` | 预览单行填充结果 | `{templateContent, rowData}` | `{content}` |
+| GET | `/generate/download` | 下载所有填充结果 ZIP | Query: `templateId` | Binary (ZIP) |
+| GET | `/example/excel` | 下载示例 Excel | - | Binary (.xlsx) |
+
+**错误响应格式：**
+```json
+{
+  "error": "MISSING_FILENAME_COLUMN",
+  "message": "缺少必需列：filename"
+}
+```
+
+**错误码：**
+| 错误码 | 说明 |
+|--------|------|
+| `TEMPLATE_PARSE_ERROR` | 模板解析失败 |
+| `MISSING_FILENAME_COLUMN` | Excel 缺少 filename 列 |
+| `COLUMN_MISMATCH` | Excel 列名与模板占位符不匹配 |
+| `EXCEL_PARSE_ERROR` | Excel 文件格式错误或损坏 |
+
 ### 3.1 模板管理
 
 **功能清单：**
@@ -114,7 +144,9 @@ Excel 解析成功！
 └─ 所有字段已匹配 ✓
 ```
 
-**文件名列：** 固定使用 `filename` 列指定输出文件名。
+**文件名列：** 固定使用 `filename` 列指定输出文件名（**注意：`filename` 不是模板占位符，仅作为元数据字段，用于指定输出文件名**）。
+
+**缺失 `filename` 列时的处理：** 上传 Excel 后检测是否包含 `filename` 列，如缺失则显示错误提示"缺少必需列：filename"，阻止继续操作，用户需补充后重新上传。
 
 **数据操作：**
 - 重新上传 Excel（覆盖）
@@ -163,7 +195,7 @@ configs-20250526-143052.zip
 
 ---
 
-## 四、数据流
+## 四、数据流与状态管理
 
 ```
 1. 用户上传模板 → 系统识别 {{字段名}} → 提取字段列表
@@ -173,6 +205,17 @@ configs-20250526-143052.zip
 5. 用户点击预览 → 选中某行 → 显示该行填充结果
 6. 用户点击下载 → 内存中所有填充结果打包 ZIP → 浏览器下载
 ```
+
+**步骤切换时的状态规则：**
+- 步骤 1→2：模板已选择，切换到数据步骤后保留
+- 步骤 2→3：Excel 已解析，切换到预览步骤后保留
+- 重新上传模板：清除已选模板，清空已填充结果，需重新上传 Excel
+- 重新上传 Excel：覆盖原数据，重新生成所有填充结果
+- 关闭页面 / 浏览器 Tab 关闭：内存数据清除，无持久化
+
+**同一 Session 内的数据保留：**
+- 在「数据」步骤重新上传模板 → 弹出确认提示"更换模板将重置预览，是否继续？"
+- 在「预览」步骤修改了模板内容 → 清除已填充结果，提示用户重新上传 Excel
 
 ---
 
@@ -213,6 +256,8 @@ configs-20250526-143052.zip
 - **不支持循环**：每行数据生成一个配置文件，一对一映射
 - **文件名字段固定**：必须有 `filename` 列
 - **极简依赖**：纯前端工具，无需数据库，无需外部服务
+- **错误处理**：模板解析失败 / Excel 格式错误 / 缺少必需列等场景均返回明确错误提示
+- **文件编码**：模板文件默认 UTF-8 编码；Excel 仅支持 .xlsx 和 .csv
 
 ---
 
@@ -233,7 +278,7 @@ server {
 }
 ```
 
-**占位符：** `port`、`domain`、`upstream`、`filename`（文件名）
+**占位符：** `port`、`domain`、`upstream`（Excel 需有对应列）
 
 ### 7.2 Spring Cloud Gateway 模板
 
@@ -250,7 +295,7 @@ spring:
             - StripPrefix=1
 ```
 
-**占位符：** `route_id`、`upstream`、`path_prefix`、`filename`（文件名）
+**占位符：** `route_id`、`upstream`、`path_prefix`（Excel 需有对应列）
 
 ### 7.3 示例 Excel
 
