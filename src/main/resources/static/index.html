@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConfigGen 配置文件生成工具</title>
+    <!-- Element Plus CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+        #app {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .app-header {
+            background: linear-gradient(135deg, #409eff 0%, #337ecc 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(64, 158, 255, 0.3);
+        }
+        .app-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .steps-container {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+        .step-content {
+            display: flex;
+            gap: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 500px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+        .left-panel {
+            flex: 0 0 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .panel-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #303133;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #409eff;
+        }
+        .template-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            border-radius: 8px;
+        }
+        .template-card:hover {
+            box-shadow: 0 4px 16px rgba(64, 158, 255, 0.25);
+            transform: translateY(-2px);
+        }
+        .template-card.selected {
+            border-color: #409eff;
+            background-color: #f0f7ff;
+        }
+        .template-card .el-card__body {
+            padding: 15px;
+        }
+        .template-card .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #303133;
+            margin-bottom: 8px;
+        }
+        .template-card .card-desc {
+            font-size: 13px;
+            color: #909399;
+            line-height: 1.5;
+        }
+        .template-card .card-icon {
+            font-size: 28px;
+            color: #409eff;
+            margin-bottom: 10px;
+        }
+        .upload-trigger {
+            border: 2px dashed #dcdfe6;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .upload-trigger:hover {
+            border-color: #409eff;
+            background-color: #f5f7fa;
+        }
+        .upload-trigger .el-icon {
+            font-size: 32px;
+            color: #c0c4cc;
+            margin-bottom: 10px;
+        }
+        .upload-trigger p {
+            color: #909399;
+            font-size: 14px;
+        }
+        .monaco-editor-container {
+            height: 400px;
+            border: 1px solid #dcdfe6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .field-matching {
+            background: #f5f7fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .field-tag {
+            margin: 5px;
+        }
+        .data-preview-table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .config-list {
+            max-height: 450px;
+            overflow-y: auto;
+            border: 1px solid #dcdfe6;
+            border-radius: 8px;
+        }
+        .config-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .config-item:last-child {
+            border-bottom: none;
+        }
+        .config-item:hover {
+            background-color: #f5f7fa;
+        }
+        .config-item.selected {
+            background-color: #ecf5ff;
+            border-left: 3px solid #409eff;
+        }
+        .config-item .config-name {
+            font-weight: 600;
+            color: #303133;
+            margin-bottom: 4px;
+        }
+        .config-item .config-path {
+            font-size: 12px;
+            color: #909399;
+        }
+        .preview-content {
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 400px;
+            overflow: auto;
+        }
+        .preview-content pre {
+            color: #d4d4d4;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .action-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .placeholder-hint {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #c0c4cc;
+        }
+        .placeholder-hint .el-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .placeholder-hint p {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <div class="app-header">
+            <h1>ConfigGen 配置文件生成工具</h1>
+        </div>
+
+        <!-- Steps -->
+        <div class="steps-container">
+            <el-steps :active="currentStep" finish-status="success" align-center>
+                <el-step title="模板配置" description="选择或上传配置模板"></el-step>
+                <el-step title="数据绑定" description="上传Excel并匹配字段"></el-step>
+                <el-step title="预览下载" description="预览生成的配置并下载"></el-step>
+            </el-steps>
+        </div>
+
+        <!-- Step Content -->
+        <div class="step-content" v-if="currentStep === 0">
+            <!-- Step 1: Template -->
+            <div class="left-panel">
+                <div class="panel-title">选择模板</div>
+
+                <el-card class="template-card" :class="{ selected: selectedTemplate === 'nginx' }" @click="selectTemplate('nginx')">
+                    <div class="card-icon">
+                        <el-icon><Document /></el-icon>
+                    </div>
+                    <div class="card-title">Nginx 配置模板</div>
+                    <div class="card-desc">适用于 Nginx 服务器配置，包含 upstream、server、location 等常用配置块</div>
+                </el-card>
+
+                <el-card class="template-card" :class="{ selected: selectedTemplate === 'spring-cloud-gateway' }" @click="selectTemplate('spring-cloud-gateway')">
+                    <div class="card-icon">
+                        <el-icon><Connection /></el-icon>
+                    </div>
+                    <div class="card-title">Spring Cloud Gateway 模板</div>
+                    <div class="card-desc">适用于 Spring Cloud Gateway 路由配置，包含路由、过滤器、 predicates 等配置</div>
+                </el-card>
+
+                <el-upload
+                    action="#"
+                    :before-upload="handleTemplateUpload"
+                    :show-file-list="false"
+                    accept=".yaml,.yml,.conf,.properties,.json"
+                >
+                    <div class="upload-trigger">
+                        <el-icon><UploadFilled /></el-icon>
+                        <p>点击上传自定义模板</p>
+                        <p style="font-size: 12px; margin-top: 5px;">支持 .yaml, .yml, .conf, .properties, .json</p>
+                    </div>
+                </el-upload>
+            </div>
+
+            <div class="right-panel">
+                <div class="panel-title">编辑模板内容</div>
+                <div class="monaco-editor-container" ref="monacoContainer">
+                    <div v-if="!templateContent" class="placeholder-hint">
+                        <el-icon><Edit /></el-icon>
+                        <p>请从左侧选择一个模板或上传自定义模板</p>
+                        <p style="font-size: 12px; margin-top: 5px;">模板中的占位符格式: {{ '{{' }}fieldName{{ '}}' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="step-content" v-if="currentStep === 1">
+            <!-- Step 2: Data -->
+            <div class="left-panel">
+                <div class="panel-title">上传数据文件</div>
+
+                <el-upload
+                    action="#"
+                    :before-upload="handleExcelUpload"
+                    :show-file-list="false"
+                    accept=".xlsx,.xls"
+                >
+                    <div class="upload-trigger">
+                        <el-icon><UploadFilled /></el-icon>
+                        <p>点击上传 Excel 数据文件</p>
+                        <p style="font-size: 12px; margin-top: 5px;">支持 .xlsx, .xls 格式</p>
+                    </div>
+                </el-upload>
+
+                <el-divider></el-divider>
+
+                <div class="panel-title" style="font-size: 14px;">已识别的占位符</div>
+                <div class="field-matching">
+                    <el-tag v-for="field in detectedFields" :key="field" type="info" class="field-tag" effect="plain">
+                        {{ '{{' }}{{ field }}{{ '}}' }}
+                    </el-tag>
+                    <div v-if="detectedFields.length === 0" style="color: #909399; font-size: 13px;">
+                        暂无占位符，请先选择模板
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="panel-title">数据预览</div>
+                <el-table
+                    v-if="tableData.length > 0"
+                    :data="tableData"
+                    border
+                    stripe
+                    class="data-preview-table"
+                    max-height="400"
+                >
+                    <el-table-column
+                        v-for="col in tableColumns"
+                        :key="col"
+                        :prop="col"
+                        :label="col"
+                        min-width="120"
+                    />
+                </el-table>
+                <div v-else class="placeholder-hint" style="height: 400px; background: #f5f7fa; border-radius: 8px;">
+                    <el-icon><Grid /></el-icon>
+                    <p>请上传 Excel 数据文件</p>
+                    <p style="font-size: 12px; margin-top: 5px;">数据将在这里预览</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="step-content" v-if="currentStep === 2">
+            <!-- Step 3: Preview & Download -->
+            <div class="left-panel">
+                <div class="panel-title">配置文件列表</div>
+                <div class="config-list">
+                    <div
+                        v-for="(config, index) in generatedConfigs"
+                        :key="index"
+                        class="config-item"
+                        :class="{ selected: selectedConfigIndex === index }"
+                        @click="selectConfig(index)"
+                    >
+                        <div class="config-name">{{ config.name }}</div>
+                        <div class="config-path">{{ config.path }}</div>
+                    </div>
+                    <div v-if="generatedConfigs.length === 0" style="padding: 20px; text-align: center; color: #909399;">
+                        暂无生成的配置文件
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="panel-title">配置预览</div>
+                <div class="preview-content">
+                    <pre v-if="selectedConfig">{{ selectedConfig }}</pre>
+                    <div v-else class="placeholder-hint" style="background: transparent;">
+                        <el-icon><Document /></el-icon>
+                        <p>请从左侧选择一个配置文件预览</p>
+                    </div>
+                </div>
+
+                <div class="action-bar">
+                    <el-button type="primary" size="large" @click="downloadZip" :disabled="generatedConfigs.length === 0">
+                        <el-icon><Download /></el-icon>
+                        下载 ZIP 包
+                    </el-button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vue 3 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.4.0/dist/vue.global.prod.js"></script>
+    <!-- Element Plus -->
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.full.js"></script>
+    <!-- Monaco Editor Loader -->
+    <script src="./js/monaco-editor/loader.js"></script>
+
+    <script>
+        const { createApp, ref, reactive, computed, onMounted } = Vue;
+        const { Document, Connection, UploadFilled, Edit, Grid, Download } = ElementPlus Icons;
+
+        const app = createApp({
+            setup() {
+                const currentStep = ref(0);
+                const selectedTemplate = ref('');
+                const templateContent = ref('');
+                const detectedFields = ref([]);
+                const tableData = ref([]);
+                const tableColumns = ref([]);
+                const generatedConfigs = ref([]);
+                const selectedConfigIndex = ref(-1);
+                const monacoContainer = ref(null);
+                let editor = null;
+
+                const selectedConfig = computed(() => {
+                    if (selectedConfigIndex.value >= 0 && selectedConfigIndex.value < generatedConfigs.value.length) {
+                        return generatedConfigs.value[selectedConfigIndex.value].content;
+                    }
+                    return '';
+                });
+
+                const selectTemplate = (template) => {
+                    selectedTemplate.value = template;
+                    // Load template content based on selection
+                    if (template === 'nginx') {
+                        templateContent.value = `# Nginx Configuration Template
+server {
+    listen {{ port }};
+    server_name {{ server_name }};
+
+    location {{ location_path }} {
+        proxy_pass {{ proxy_pass }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    access_log /var/log/nginx/{{ server_name }}.log;
+    error_log /var/log/nginx/{{ server_name }}.error.log;
+}`;
+                    } else if (template === 'spring-cloud-gateway') {
+                        templateContent.value = `spring:
+  cloud:
+    gateway:
+      routes:
+        - id: {{ route_id }}
+          uri: {{ route_uri }}
+          predicates:
+            - Path={{ path_predicate }}
+          filters:
+            - StripPrefix={{ strip_prefix }}
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: {{ rate_limit_replenish }}
+                redis-rate-limiter.burstCapacity: {{ rate_limit_burst }}
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins: {{ allowed_origins }}
+            allowedMethods: {{ allowed_methods }}`;
+                    }
+                    initMonacoEditor();
+                };
+
+                const handleTemplateUpload = (file) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        templateContent.value = e.target.result;
+                        extractPlaceholders(e.target.result);
+                        initMonacoEditor();
+                    };
+                    reader.readAsText(file);
+                    return false;
+                };
+
+                const handleExcelUpload = (file) => {
+                    // Excel parsing would go here
+                    // For now, simulate data
+                    tableColumns.value = ['ID', 'Name', 'Port', 'Path'];
+                    tableData.value = [
+                        { ID: '1', Name: 'Service A', Port: '8080', Path: '/api/a' },
+                        { ID: '2', Name: 'Service B', Port: '8081', Path: '/api/b' }
+                    ];
+                    return false;
+                };
+
+                const extractPlaceholders = (content) => {
+                    const regex = /\{\{(\w+)\}\}/g;
+                    const fields = new Set();
+                    let match;
+                    while ((match = regex.exec(content)) !== null) {
+                        fields.add(match[1]);
+                    }
+                    detectedFields.value = Array.from(fields);
+                };
+
+                const initMonacoEditor = () => {
+                    if (window.monaco && monacoContainer.value) {
+                        if (editor) {
+                            editor.dispose();
+                        }
+                        editor = window.monaco.editor.create(monacoContainer.value, {
+                            value: templateContent.value,
+                            language: 'yaml',
+                            theme: 'vs-dark',
+                            readOnly: false,
+                            minimap: { enabled: false },
+                            fontSize: 14,
+                            lineNumbers: 'on',
+                            scrollBeyondLastLine: false,
+                            automaticLayout: true
+                        });
+                    }
+                };
+
+                const selectConfig = (index) => {
+                    selectedConfigIndex.value = index;
+                };
+
+                const downloadZip = () => {
+                    // ZIP download would go here
+                    ElementPlus.ElMessage.info('正在生成 ZIP 包...');
+                };
+
+                onMounted(() => {
+                    // Initialize Monaco if already loaded
+                    if (window.monaco) {
+                        initMonacoEditor();
+                    } else {
+                        // Wait for Monaco to load
+                        const checkMonaco = setInterval(() => {
+                            if (window.monaco) {
+                                initMonacoEditor();
+                                clearInterval(checkMonaco);
+                            }
+                        }, 100);
+                    }
+                });
+
+                return {
+                    currentStep,
+                    selectedTemplate,
+                    templateContent,
+                    detectedFields,
+                    tableData,
+                    tableColumns,
+                    generatedConfigs,
+                    selectedConfigIndex,
+                    selectedConfig,
+                    monacoContainer,
+                    selectTemplate,
+                    handleTemplateUpload,
+                    handleExcelUpload,
+                    selectConfig,
+                    downloadZip
+                };
+            }
+        });
+
+        app.component('Document', Document);
+        app.component('Connection', Connection);
+        app.component('UploadFilled', UploadFilled);
+        app.component('Edit', Edit);
+        app.component('Grid', Grid);
+        app.component('Download', Download);
+
+        app.use(ElementPlus);
+        app.mount('#app');
+    </script>
+</body>
+</html>
