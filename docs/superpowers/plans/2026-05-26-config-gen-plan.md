@@ -63,7 +63,13 @@
         <!-- Excel 处理 -->
         <dependency>
             <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>5.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
+            <version>5.2.5</version>
             <version>5.2.5</version>
         </dependency>
 
