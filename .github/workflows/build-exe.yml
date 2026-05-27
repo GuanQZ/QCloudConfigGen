@@ -22,16 +22,19 @@ jobs:
       - name: Build with Maven
         run: mvn package -DskipTests -q
 
-      - name: Download Launch4j from GitHub
+      - name: Download and setup Launch4j
         run: |
-          curl -L "https://github.com/AdoptOpenJDK/Launch4j-releases/releases/download/v3.50/launch4j-3.50-windowsamd64.zip" -o launch4j.zip
-          Expand-Archive -Path "launch4j.zip" -DestinationPath "launch4j" -Force
-          Copy-Item -Path "launch4j\launch4j-3.50-windowsamd64\*" -Destination "launch4j\bin" -Recurse -Force
+          $url = "https://sourceforge.net/projects/launch4j/files/launch4j-3.50/launch4j-3.50-windowsamd64.zip/download"
+          $output = "launch4j.zip"
+          $headers = @{ "User-Agent" = "Mozilla/5.0" }
+          Invoke-WebRequest -Uri $url -OutFile $output -Headers $headers -UseBasicParsing
+          Expand-Archive -Path $output -DestinationPath "launch4j" -Force
+          Get-ChildItem -Path "launch4j" -Recurse | Where-Object { $_.Name -match "^launch4j" -and $_.Name -match "\.jar$" } | Select-Object -First 1
 
       - name: Create Launch4j config
         shell: pwsh
         run: |
-          @"
+          $xml = @"
           <launch4j configFileVersion="1.5">
             <headerType>gui</headerType>
             <jar>configgen-1.0.0.jar</jar>
@@ -47,11 +50,13 @@ jobs:
               <productName>QCloudConfigGen</productName>
             </versionInfo>
           </launch4j>
-          "@ | Out-File -Encoding ASCII launch4j.xml
+          "@
+          $xml | Out-File -Encoding ASCII launch4j.xml
 
       - name: Build EXE with Launch4j
         run: |
-          java -jar launch4j/bin/launch4j.jar launch4j.xml
+          $launch4j = Get-ChildItem -Path "launch4j" -Recurse -Filter "launch4j*.jar" | Select-Object -First 1
+          java -jar $launch4j.FullName launch4j.xml
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
