@@ -35,7 +35,7 @@ public class GenerateController {
         }
 
         String content = configGeneratorService.previewOne(templateContent, rowData);
-        return ResponseEntity.ok(ApiResponse.success(Map.of("content", content)));
+        return ResponseEntity.ok(ApiResponse.success(new java.util.HashMap<String, String>() {{ put("content", content); }}));
     }
 
     @PostMapping("/download")
@@ -59,12 +59,12 @@ public class GenerateController {
         // Validate mergedFilename if mergeOutput is enabled
         if (mergeOutput) {
             if (mergedFilename == null || mergedFilename.trim().isEmpty()) {
-                return ResponseEntity.ok(ApiResponse.<Void>error("INVALID_MERGED_FILENAME", "统一文件名不能为空"));
+                return ResponseEntity.ok(ApiResponse.error("INVALID_MERGED_FILENAME", "统一文件名不能为空"));
             }
             try {
                 validateFilename(mergedFilename.trim(), "INVALID_MERGED_FILENAME");
             } catch (IllegalArgumentException e) {
-                return ResponseEntity.ok(ApiResponse.<Void>error("INVALID_MERGED_FILENAME", "统一文件名不能为空或包含非法字符"));
+                return ResponseEntity.ok(ApiResponse.error("INVALID_MERGED_FILENAME", "统一文件名不能为空或包含非法字符"));
             }
         }
 

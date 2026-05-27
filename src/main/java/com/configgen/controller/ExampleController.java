@@ -26,10 +26,9 @@ public class ExampleController {
         Sheet sheet = workbook.createSheet("配置示例");
 
         String[] headers = {"filename", "port", "domain", "upstream"};
-        List<Map<String, String>> exampleRows = List.of(
-            createRow("nginx.conf", "80", "example.com", "backend1"),
-            createRow("gateway.yaml", "8080", "api.example.com", "backend2")
-        );
+        java.util.List<Map<String, String>> exampleRows = new java.util.ArrayList<>();
+        exampleRows.add(createRow("nginx.conf", "80", "example.com", "backend1"));
+        exampleRows.add(createRow("gateway.yaml", "8080", "api.example.com", "backend2"));
 
         Row headerRow = sheet.createRow(0);
         for (int i = 0; i < headers.length; i++) {

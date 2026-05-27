@@ -40,7 +40,8 @@ public class TemplateController {
             return ResponseEntity.ok(ApiResponse.error("TEMPLATE_PARSE_ERROR", "模板内容不能为空"));
         }
         List<String> placeholders = templateService.parsePlaceholders(content);
-        Map<String, Object> result = Map.of("placeholders", placeholders);
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("placeholders", placeholders);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 }
