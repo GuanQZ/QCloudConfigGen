@@ -24,7 +24,7 @@ jobs:
 
       - name: Build Windows EXE with jpackage
         run: |
-          jpackage --type exe --input target --output dist --name QCloudConfigGen --main-jar configgen-1.0.0.jar --app-version "1.0.0" --vendor "QCloud" --product-name "QCloud配置文件生成工具"
+          jpackage --type exe --input target --dest dist --name QCloudConfigGen --main-jar configgen-1.0.0.jar --app-version "1.0.0" --vendor "QCloud" --product-name "QCloud配置文件生成工具"
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
