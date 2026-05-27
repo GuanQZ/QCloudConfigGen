@@ -1,0 +1,44 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build with Maven
+        run: mvn package -DskipTests -q
+
+      - name: Build Windows EXE with jpackage
+        run: |
+          $exe = "target\configgen-1.0.0.jar"
+          jpackage --type exe --input target --output dist --name QCloudConfigGen `
+            --main-jar configgen-1.0.0.jar `
+            --app-version "1.0.0" `
+            --vendor "QCloud" `
+            --product-name "QCloud配置文件生成工具"
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QCloudConfigGen-windows-exe
+          path: dist/*.exe
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: QCloudConfigGen-jar
+          path: ConfigGen.jar

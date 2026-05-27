@@ -1,0 +1,24 @@
+# Build outputs
+target/
+*.jar
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Logs
+*.log
+.playwright-mcp/
+
+# Temp files
+*.tmp
+.DS_Store
+
+# Excel test files
+test-branch-data.xlsx
+excel/
+
+# JAR files in root
+ConfigGen.jar

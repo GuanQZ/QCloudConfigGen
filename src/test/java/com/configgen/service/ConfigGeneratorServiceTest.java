@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ConfigGeneratorServiceTest {
 
     @Test
-    void testGenerateZip() {
+    void testGenerateZip() throws Exception {
         TemplateService templateService = new TemplateService();
         ConfigGeneratorService service = new ConfigGeneratorService(templateService);
 

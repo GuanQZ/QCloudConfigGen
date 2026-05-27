@@ -3,6 +3,7 @@ package com.configgen.controller;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -57,7 +58,7 @@ public class ExampleController {
         headersResponse.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
         headersResponse.setContentDispositionFormData("attachment", "example.xlsx");
 
-        return ResponseEntity.ok(headersResponse).body(baos.toByteArray());
+        return new ResponseEntity<>(baos.toByteArray(), headersResponse, HttpStatus.OK);
     }
 
     private Map<String, String> createRow(String filename, String port, String domain, String upstream) {

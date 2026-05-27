@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ConfigGen 配置文件生成工具</title>
+    <title>QCloud 配置文件生成工具</title>
     <!-- Element Plus CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.css">
+    <!-- Element Plus Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@element-plus/icons-vue@2.3.8/dist/index.css">
     <style>
         * {
             margin: 0;
@@ -215,8 +217,9 @@
 <body>
     <div id="app">
         <!-- Header -->
-        <div class="app-header">
-            <h1>ConfigGen 配置文件生成工具</h1>
+        <div class="app-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>QCloud 配置文件生成工具</h1>
+            <el-button type="danger" size="small" @click="shutdownApp" plain>关闭程序</el-button>
         </div>
 
         <!-- Steps -->
@@ -235,17 +238,13 @@
                 <div class="panel-title">选择模板</div>
 
                 <el-card class="template-card" :class="{ selected: selectedTemplate === 'nginx' }" @click="selectTemplate('nginx')">
-                    <div class="card-icon">
-                        <el-icon><Document /></el-icon>
-                    </div>
+                    <div class="card-icon">📄</div>
                     <div class="card-title">Nginx 配置模板</div>
                     <div class="card-desc">适用于 Nginx 服务器配置，包含 upstream、server、location 等常用配置块</div>
                 </el-card>
 
                 <el-card class="template-card" :class="{ selected: selectedTemplate === 'spring-cloud-gateway' }" @click="selectTemplate('spring-cloud-gateway')">
-                    <div class="card-icon">
-                        <el-icon><Connection /></el-icon>
-                    </div>
+                    <div class="card-icon">🔗</div>
                     <div class="card-title">Spring Cloud Gateway 模板</div>
                     <div class="card-desc">适用于 Spring Cloud Gateway 路由配置，包含路由、过滤器、 predicates 等配置</div>
                 </el-card>
@@ -257,7 +256,7 @@
                     accept=".yaml,.yml,.conf,.properties,.json"
                 >
                     <div class="upload-trigger">
-                        <el-icon><UploadFilled /></el-icon>
+                        <div style="font-size: 32px; color: #c0c4cc; margin-bottom: 10px;">📤</div>
                         <p>点击上传自定义模板</p>
                         <p style="font-size: 12px; margin-top: 5px;">支持 .yaml, .yml, .conf, .properties, .json</p>
                     </div>
@@ -268,10 +267,16 @@
                 <div class="panel-title">编辑模板内容</div>
                 <div class="monaco-editor-container" ref="monacoContainer">
                     <div v-if="!templateContent" class="placeholder-hint">
-                        <el-icon><Edit /></el-icon>
+                        <div style="font-size: 48px; margin-bottom: 15px;">&#128392;</div>
                         <p>请从左侧选择一个模板或上传自定义模板</p>
-                        <p style="font-size: 12px; margin-top: 5px;">模板中的占位符格式: {{ '{{' }}fieldName{{ '}}' }}</p>
+                        <p style="font-size: 12px; margin-top: 5px;">模板中的占位符格式: &#123;&#123;fieldName&#125;&#125;</p>
                     </div>
+                </div>
+
+                <div class="action-bar">
+                    <el-button type="primary" size="large" @click="nextStep" :disabled="!templateContent">
+                        下一步 &#8594;
+                    </el-button>
                 </div>
             </div>
         </div>
@@ -288,7 +293,7 @@
                     accept=".xlsx,.xls"
                 >
                     <div class="upload-trigger">
-                        <el-icon><UploadFilled /></el-icon>
+                        <div style="font-size: 32px; color: #c0c4cc; margin-bottom: 10px;">📤</div>
                         <p>点击上传 Excel 数据文件</p>
                         <p style="font-size: 12px; margin-top: 5px;">支持 .xlsx, .xls 格式</p>
                     </div>
@@ -299,7 +304,7 @@
                 <div class="panel-title" style="font-size: 14px;">已识别的占位符</div>
                 <div class="field-matching">
                     <el-tag v-for="field in detectedFields" :key="field" type="info" class="field-tag" effect="plain">
-                        {{ '{{' }}{{ field }}{{ '}}' }}
+                        {{ field }}
                     </el-tag>
                     <div v-if="detectedFields.length === 0" style="color: #909399; font-size: 13px;">
                         暂无占位符，请先选择模板
@@ -326,9 +331,14 @@
                     />
                 </el-table>
                 <div v-else class="placeholder-hint" style="height: 400px; background: #f5f7fa; border-radius: 8px;">
-                    <el-icon><Grid /></el-icon>
+                    <div style="font-size: 48px; margin-bottom: 15px;">📊</div>
                     <p>请上传 Excel 数据文件</p>
                     <p style="font-size: 12px; margin-top: 5px;">数据将在这里预览</p>
+                </div>
+
+                <div class="action-bar">
+                    <el-button size="large" @click="currentStep--">&#8592 上一步</el-button>
+                    <el-button type="primary" size="large" @click="nextStep" :disabled="tableData.length === 0">下一步 &#8594</el-button>
                 </div>
             </div>
         </div>
@@ -359,15 +369,15 @@
                 <div class="preview-content">
                     <pre v-if="selectedConfig">{{ selectedConfig }}</pre>
                     <div v-else class="placeholder-hint" style="background: transparent;">
-                        <el-icon><Document /></el-icon>
+                        <div style="font-size: 48px; margin-bottom: 15px;">📄</div>
                         <p>请从左侧选择一个配置文件预览</p>
                     </div>
                 </div>
 
                 <div class="action-bar">
+                    <el-button type="default" size="large" @click="currentStep--">&#8592 上一步</el-button>
                     <el-button type="primary" size="large" @click="downloadZip" :disabled="generatedConfigs.length === 0">
-                        <el-icon><Download /></el-icon>
-                        下载 ZIP 包
+                        📥 下载 ZIP 包
                     </el-button>
                 </div>
             </div>
@@ -375,7 +385,7 @@
     </div>
 
     <!-- Vue 3 -->
-    <script src="https://cdn.jsdelivr.net/npm/vue@3.4.0/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.4.0/dist/vue.global.js"></script>
     <!-- Element Plus -->
     <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.full.js"></script>
     <!-- Monaco Editor Loader -->
@@ -383,7 +393,7 @@
 
     <script>
         const { createApp, ref, reactive, computed, onMounted } = Vue;
-        const { Document, Connection, UploadFilled, Edit, Grid, Download } = ElementPlus Icons;
+        const { ElIcon } = ElementPlus;
 
         const app = createApp({
             setup() {
@@ -409,42 +419,42 @@
                     selectedTemplate.value = template;
                     // Load template content based on selection
                     if (template === 'nginx') {
-                        templateContent.value = `# Nginx Configuration Template
-server {
-    listen {{ port }};
-    server_name {{ server_name }};
+                        templateContent.value = `server {
+    listen {{port}};
+    server_name {{server_name}};
 
-    location {{ location_path }} {
-        proxy_pass {{ proxy_pass }};
+    location {{location_path}} {
+        proxy_pass {{proxy_pass}};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
 
-    access_log /var/log/nginx/{{ server_name }}.log;
-    error_log /var/log/nginx/{{ server_name }}.error.log;
+    access_log /var/log/nginx/{{server_name}}.log;
+    error_log /var/log/nginx/{{server_name}}.error.log;
 }`;
                     } else if (template === 'spring-cloud-gateway') {
                         templateContent.value = `spring:
   cloud:
     gateway:
       routes:
-        - id: {{ route_id }}
-          uri: {{ route_uri }}
+        - id: {{route_id}}
+          uri: {{route_uri}}
           predicates:
-            - Path={{ path_predicate }}
+            - Path={{path_predicate}}
           filters:
-            - StripPrefix={{ strip_prefix }}
+            - StripPrefix={{strip_prefix}}
             - name: RequestRateLimiter
               args:
-                redis-rate-limiter.replenishRate: {{ rate_limit_replenish }}
-                redis-rate-limiter.burstCapacity: {{ rate_limit_burst }}
+                redis-rate-limiter.replenishRate: {{rate_limit_replenish}}
+                redis-rate-limiter.burstCapacity: {{rate_limit_burst}}
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins: {{ allowed_origins }}
-            allowedMethods: {{ allowed_methods }}`;
+            allowedOrigins: {{allowed_origins}}
+            allowedMethods: {{allowed_methods}}`;
                     }
+                    extractPlaceholders(templateContent.value);
                     initMonacoEditor();
                 };
 
@@ -460,13 +470,26 @@ server {
                 };
 
                 const handleExcelUpload = (file) => {
-                    // Excel parsing would go here
-                    // For now, simulate data
-                    tableColumns.value = ['ID', 'Name', 'Port', 'Path'];
-                    tableData.value = [
-                        { ID: '1', Name: 'Service A', Port: '8080', Path: '/api/a' },
-                        { ID: '2', Name: 'Service B', Port: '8081', Path: '/api/b' }
-                    ];
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    fetch('/api/excel/parse', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.data) {
+                            tableColumns.value = data.data.columns || [];
+                            tableData.value = data.data.rows || [];
+                            ElementPlus.ElMessage.success('Excel文件解析成功');
+                        } else {
+                            ElementPlus.ElMessage.error(data.error || '解析Excel失败');
+                        }
+                    })
+                    .catch(err => {
+                        ElementPlus.ElMessage.error('解析Excel失败: ' + err);
+                    });
                     return false;
                 };
 
@@ -504,8 +527,88 @@ server {
                 };
 
                 const downloadZip = () => {
-                    // ZIP download would go here
-                    ElementPlus.ElMessage.info('正在生成 ZIP 包...');
+                    if (generatedConfigs.value.length === 0) {
+                        ElementPlus.ElMessage.warning('没有可下载的配置文件');
+                        return;
+                    }
+
+                    const templateContentStr = templateContent.value;
+                    const rows = tableData.value;
+
+                    fetch('/api/generate/download', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ templateContent: templateContentStr, rows: rows })
+                    })
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const timestamp = new Date().toISOString().replace(/[-:T]/g, '').replace(/\.\d{3}/, '');
+                        const filename = `configs-${timestamp}.zip`;
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        ElementPlus.ElMessage.success('下载成功');
+                    })
+                    .catch(err => {
+                        ElementPlus.ElMessage.error('下载失败: ' + err);
+                    });
+                };
+
+                const shutdownApp = () => {
+                    if (confirm('确定要关闭程序吗？')) {
+                        fetch('/api/shutdown', { method: 'POST' })
+                            .then(() => {
+                                ElementPlus.ElMessage.success('程序正在关闭...');
+                            });
+                    }
+                };
+
+                const nextStep = () => {
+                    if (currentStep.value === 1 && tableData.value.length > 0) {
+                        // Generate preview configs when moving to step 3
+                        const templateContentStr = templateContent.value;
+                        const rows = tableData.value;
+
+                        // For each row, generate a preview and store it
+                        const configs = [];
+                        let completed = 0;
+
+                        rows.forEach((row, index) => {
+                            fetch('/api/generate/preview', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ templateContent: templateContentStr, rowData: row })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success && data.data) {
+                                    configs.push({
+                                        name: row.filename || `config-${index + 1}.conf`,
+                                        path: row.filename || `config-${index + 1}.conf`,
+                                        content: data.data.content
+                                    });
+                                }
+                                completed++;
+                                if (completed === rows.length) {
+                                    generatedConfigs.value = configs;
+                                    if (configs.length > 0) {
+                                        selectedConfigIndex.value = 0;
+                                    }
+                                    currentStep.value++;
+                                }
+                            });
+                        });
+                        return;
+                    }
+
+                    if (currentStep.value < 2) {
+                        currentStep.value++;
+                    }
                 };
 
                 onMounted(() => {
@@ -538,17 +641,12 @@ server {
                     handleTemplateUpload,
                     handleExcelUpload,
                     selectConfig,
-                    downloadZip
+                    downloadZip,
+                    nextStep,
+                    shutdownApp
                 };
             }
         });
-
-        app.component('Document', Document);
-        app.component('Connection', Connection);
-        app.component('UploadFilled', UploadFilled);
-        app.component('Edit', Edit);
-        app.component('Grid', Grid);
-        app.component('Download', Download);
 
         app.use(ElementPlus);
         app.mount('#app');

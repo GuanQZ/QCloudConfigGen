@@ -3,6 +3,7 @@ package com.configgen.controller;
 import com.configgen.model.ApiResponse;
 import com.configgen.service.ConfigGeneratorService;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -56,6 +57,6 @@ public class GenerateController {
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("attachment", "configs.zip");
 
-        return ResponseEntity.ok(headers).body(zipBytes);
+        return new ResponseEntity<>(zipBytes, headers, HttpStatus.OK);
     }
 }
