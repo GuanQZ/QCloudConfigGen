@@ -212,6 +212,11 @@
         .placeholder-hint p {
             font-size: 14px;
         }
+        .merge-output-section {
+            background: #f5f7fa;
+            border-radius: 8px;
+            padding: 15px;
+        }
     </style>
 </head>
 <body>
@@ -310,6 +315,23 @@
                         暂无占位符，请先选择模板
                     </div>
                 </div>
+
+                <el-divider></el-divider>
+
+                <div class="merge-output-section" style="margin-top: 15px;">
+                    <div style="font-size: 14px; margin-bottom: 10px; color: #606266;">合并输出选项</div>
+                    <el-checkbox v-model="mergeOutput" :disabled="!selectedTemplate">合并输出到同一文件夹</el-checkbox>
+                    <div v-if="mergeOutput" style="margin-top: 10px;">
+                        <el-input
+                            v-model="mergedFilename"
+                            placeholder="输入统一文件名，如 nginx.conf"
+                            size="default"
+                        ></el-input>
+                        <div v-if="mergedFilenameError" style="color: #f56c6c; font-size: 12px; margin-top: 5px;">
+                            {{ mergedFilenameError }}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="right-panel">
@@ -355,8 +377,14 @@
                         :class="{ selected: selectedConfigIndex === index }"
                         @click="selectConfig(index)"
                     >
-                        <div class="config-name">{{ config.name }}</div>
-                        <div class="config-path">{{ config.path }}</div>
+                        <template v-if="config.folder">
+                            <div style="font-size: 16px; font-weight: 600; color: #303133;">{{ config.folder }}</div>
+                            <div style="font-size: 12px; color: #909399;">{{ config.filename }}</div>
+                        </template>
+                        <template v-else>
+                            <div class="config-name">{{ config.name }}</div>
+                            <div class="config-path">{{ config.path }}</div>
+                        </template>
                     </div>
                     <div v-if="generatedConfigs.length === 0" style="padding: 20px; text-align: center; color: #909399;">
                         暂无生成的配置文件
@@ -407,6 +435,10 @@
                 const selectedConfigIndex = ref(-1);
                 const monacoContainer = ref(null);
                 let editor = null;
+
+                const mergeOutput = ref(false);
+                const mergedFilename = ref('');
+                const mergedFilenameError = ref('');
 
                 const selectedConfig = computed(() => {
                     if (selectedConfigIndex.value >= 0 && selectedConfigIndex.value < generatedConfigs.value.length) {
@@ -535,10 +567,20 @@
                     const templateContentStr = templateContent.value;
                     const rows = tableData.value;
 
+                    const requestBody = {
+                        templateContent: templateContentStr,
+                        rows: rows
+                    };
+
+                    if (mergeOutput.value && mergedFilename.value) {
+                        requestBody.mergeOutput = true;
+                        requestBody.mergedFilename = mergedFilename.value;
+                    }
+
                     fetch('/api/generate/download', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ templateContent: templateContentStr, rows: rows })
+                        body: JSON.stringify(requestBody)
                     })
                     .then(res => res.blob())
                     .then(blob => {
@@ -587,11 +629,23 @@
                             .then(res => res.json())
                             .then(data => {
                                 if (data.success && data.data) {
-                                    configs.push({
-                                        name: row.filename || `config-${index + 1}.conf`,
-                                        path: row.filename || `config-${index + 1}.conf`,
-                                        content: data.data.content
-                                    });
+                                    if (mergeOutput.value && mergedFilename.value) {
+                                        // Merged mode: folder/filename structure
+                                        configs.push({
+                                            name: row.filename + ' / ' + mergedFilename.value,
+                                            folder: row.filename,
+                                            filename: mergedFilename.value,
+                                            path: row.filename + '/' + mergedFilename.value,
+                                            content: data.data.content
+                                        });
+                                    } else {
+                                        // Original mode
+                                        configs.push({
+                                            name: row.filename || `config-${index + 1}.conf`,
+                                            path: row.filename || `config-${index + 1}.conf`,
+                                            content: data.data.content
+                                        });
+                                    }
                                 }
                                 completed++;
                                 if (completed === rows.length) {
@@ -637,6 +691,9 @@
                     selectedConfigIndex,
                     selectedConfig,
                     monacoContainer,
+                    mergeOutput,
+                    mergedFilename,
+                    mergedFilenameError,
                     selectTemplate,
                     handleTemplateUpload,
                     handleExcelUpload,
