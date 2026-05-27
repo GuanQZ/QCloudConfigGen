@@ -25,10 +25,11 @@ public class ExampleController {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("配置示例");
 
-        String[] headers = {"filename", "port", "domain", "upstream"};
-        java.util.List<Map<String, String>> exampleRows = new java.util.ArrayList<>();
-        exampleRows.add(createRow("nginx.conf", "80", "example.com", "backend1"));
-        exampleRows.add(createRow("gateway.yaml", "8080", "api.example.com", "backend2"));
+        String[] headers = {"filename", "port", "server_name", "location_path", "proxy_pass"};
+        List<Map<String, String>> exampleRows = java.util.Arrays.asList(
+                createRow("nginx.conf", "80", "example.com", "/api", "http://backend1"),
+                createRow("api.conf", "8080", "api.example.com", "/gateway", "http://backend2")
+        );
 
         Row headerRow = sheet.createRow(0);
         for (int i = 0; i < headers.length; i++) {
@@ -41,8 +42,9 @@ public class ExampleController {
             Map<String, String> rowData = exampleRows.get(rowIdx);
             dataRow.createCell(0).setCellValue(rowData.get("filename"));
             dataRow.createCell(1).setCellValue(rowData.get("port"));
-            dataRow.createCell(2).setCellValue(rowData.get("domain"));
-            dataRow.createCell(3).setCellValue(rowData.get("upstream"));
+            dataRow.createCell(2).setCellValue(rowData.get("server_name"));
+            dataRow.createCell(3).setCellValue(rowData.get("location_path"));
+            dataRow.createCell(4).setCellValue(rowData.get("proxy_pass"));
         }
 
         for (int i = 0; i < headers.length; i++) {
@@ -60,12 +62,37 @@ public class ExampleController {
         return new ResponseEntity<>(baos.toByteArray(), headersResponse, HttpStatus.OK);
     }
 
-    private Map<String, String> createRow(String filename, String port, String domain, String upstream) {
+    @GetMapping("/template")
+    public ResponseEntity<byte[]> getExampleTemplate() throws IOException {
+        String template = "server {\n" +
+                "    listen {{port}};\n" +
+                "    server_name {{server_name}};\n" +
+                "\n" +
+                "    location {{location_path}} {\n" +
+                "        proxy_pass {{proxy_pass}};\n" +
+                "        proxy_set_header Host $host;\n" +
+                "        proxy_set_header X-Real-IP $remote_addr;\n" +
+                "        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n" +
+                "    }\n" +
+                "\n" +
+                "    access_log /var/log/nginx/{{server_name}}.log;\n" +
+                "    error_log /var/log/nginx/{{server_name}}.error.log;\n" +
+                "}";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/plain"));
+        headers.setContentDispositionFormData("attachment", "nginx-template.conf");
+
+        return new ResponseEntity<>(template.getBytes("UTF-8"), headers, HttpStatus.OK);
+    }
+
+    private Map<String, String> createRow(String filename, String port, String serverName, String locationPath, String proxyPass) {
         Map<String, String> row = new LinkedHashMap<>();
         row.put("filename", filename);
         row.put("port", port);
-        row.put("domain", domain);
-        row.put("upstream", upstream);
+        row.put("server_name", serverName);
+        row.put("location_path", locationPath);
+        row.put("proxy_pass", proxyPass);
         return row;
     }
 }

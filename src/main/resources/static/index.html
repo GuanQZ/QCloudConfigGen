@@ -264,6 +264,12 @@
                         <p style="font-size: 12px; margin-top: 5px;">支持 .yaml, .yml, .conf, .properties, .json</p>
                     </div>
                 </el-upload>
+
+                <div style="margin-top: 10px;">
+                    <el-button type="info" size="small" @click="downloadExampleTemplate" plain>
+                        📥 下载示例模板
+                    </el-button>
+                </div>
             </div>
 
             <div class="right-panel">
@@ -301,6 +307,12 @@
                         <p style="font-size: 12px; margin-top: 5px;">支持 .xlsx, .xls 格式</p>
                     </div>
                 </el-upload>
+
+                <div style="margin-top: 10px;">
+                    <el-button type="info" size="small" @click="downloadExampleExcel" plain>
+                        📥 下载示例Excel
+                    </el-button>
+                </div>
 
                 <el-divider></el-divider>
 
@@ -608,6 +620,44 @@
                     }
                 };
 
+                const downloadExampleTemplate = () => {
+                    fetch('/api/example/template')
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'nginx-template.conf';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        ElementPlus.ElMessage.success('模板下载成功');
+                    })
+                    .catch(err => {
+                        ElementPlus.ElMessage.error('下载失败: ' + err);
+                    });
+                };
+
+                const downloadExampleExcel = () => {
+                    fetch('/api/example/excel')
+                    .then(res => res.blob())
+                    .then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'example.xlsx';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        ElementPlus.ElMessage.success('示例Excel下载成功');
+                    })
+                    .catch(err => {
+                        ElementPlus.ElMessage.error('下载失败: ' + err);
+                    });
+                };
+
                 const nextStep = () => {
                     if (currentStep.value === 1 && tableData.value.length > 0) {
                         // Generate preview configs when moving to step 3
@@ -697,6 +747,8 @@
                     handleExcelUpload,
                     selectConfig,
                     downloadZip,
+                    downloadExampleTemplate,
+                    downloadExampleExcel,
                     nextStep,
                     shutdownApp
                 };
