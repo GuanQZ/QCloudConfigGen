@@ -24,8 +24,7 @@ jobs:
 
       - name: Create custom JRE with jlink
         run: |
-          $jlink = "$env:JAVA_HOME\bin\jlink.exe"
-          & $jlink --output runtime-image --add-modules java.base,java.compiler,java.datatransfer,java.desktop,java.instrument,java.logging,java.management,java.naming,java.net.http,java.prefs,java.scripting,java.security.sasl,java.smartcardio,java.sql.rowset,java.xml.crypto,java.activation,java.logging,java.management.rmi,java.transaction.xa,java.sql,java.xml,java.rmi,java.security.jgss,java.se,java.datatransfer --strip-debug --compress=2 --no-header-files --no-man-pages
+          jlink --output runtime-image --add-modules java.base,java.compiler,java.datatransfer,java.desktop,java.instrument,java.logging,java.management,java.naming,java.net.http,java.prefs,java.scripting,java.security.sasl,java.sql.rowset,java.xml.crypto,java.sql,java.xml,java.rmi,java.security.jgss,java.se --strip-debug --compress=2 --no-header-files --no-man-pages
 
       - name: Build Windows EXE with jpackage
         run: |
