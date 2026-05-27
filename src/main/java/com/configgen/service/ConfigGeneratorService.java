@@ -23,6 +23,9 @@ public class ConfigGeneratorService {
 
     public byte[] generateZip(String templateContent, List<Map<String, String>> rows,
                              boolean mergeOutput, String mergedFilename) {
+        if (mergeOutput) {
+            validateFilename(mergedFilename, "mergedFilename");
+        }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             for (Map<String, String> row : rows) {

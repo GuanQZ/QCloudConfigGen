@@ -52,4 +52,51 @@ class ConfigGeneratorServiceTest {
         String result = service.previewOne(template, row);
         assertEquals("listen 8080;", result);
     }
+
+    @Test
+    void testGenerateZipWithMergeOutput() throws Exception {
+        TemplateService templateService = new TemplateService();
+        ConfigGeneratorService service = new ConfigGeneratorService(templateService);
+
+        String template = "server {\n    listen {{port}};\n}";
+        List<Map<String, String>> rows = List.of(
+                Map.of("filename", "beijing", "port", "8080"),
+                Map.of("filename", "shanghai", "port", "8081")
+        );
+
+        byte[] zip = service.generateZip(template, rows, true, "nginx.conf");
+        assertNotNull(zip);
+        assertTrue(zip.length > 0);
+
+        // Verify ZIP content with folder structure
+        try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(zip))) {
+            ZipEntry entry1 = zis.getNextEntry();
+            assertEquals("beijing/nginx.conf", entry1.getName());
+
+            byte[] content1 = zis.readAllBytes();
+            assertTrue(new String(content1).contains("8080"));
+
+            ZipEntry entry2 = zis.getNextEntry();
+            assertEquals("shanghai/nginx.conf", entry2.getName());
+
+            byte[] content2 = zis.readAllBytes();
+            assertTrue(new String(content2).contains("8081"));
+        }
+    }
+
+    @Test
+    void testGenerateZipWithInvalidMergedFilename() {
+        TemplateService templateService = new TemplateService();
+        ConfigGeneratorService service = new ConfigGeneratorService(templateService);
+
+        String template = "server {\n    listen {{port}};\n}";
+        List<Map<String, String>> rows = List.of(
+                Map.of("filename", "beijing", "port", "8080")
+        );
+
+        // Test invalid character in mergedFilename
+        assertThrows(IllegalArgumentException.class, () -> {
+            service.generateZip(template, rows, true, "ng:in.conf");
+        });
+    }
 }
