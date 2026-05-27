@@ -22,16 +22,43 @@ jobs:
       - name: Build with Maven
         run: mvn package -DskipTests -q
 
-      - name: Build Windows EXE with jpackage
+      - name: Download Launch4j
         run: |
-          jpackage --type app-image --input target --dest dist --name QCloudConfigGen --main-jar configgen-1.0.0.jar --app-version "1.0.0" --vendor "QCloud" --java-options "-Xmx256m"
+          Invoke-WebRequest -Uri "https://sourceforge.net/projects/launch4j/files/launch4j-3.50/launch4j-3.50-windowsamd64.zip/download" -OutFile "launch4j.zip"
+          Expand-Archive -Path "launch4j.zip" -DestinationPath "launch4j"
+          Move-Item -Path "launch4j\launch4j-3.50-windowsamd64\*" -Destination "launch4j\bin"
 
-      - name: Zip app-image for distribution
+      - name: Create Launch4j config
         run: |
-          Compress-Archive -Path "dist/QCloudConfigGen" -DestinationPath "dist/QCloudConfigGen.zip" -Force
+          $config = @"
+          <launch4j configFileVersion="1.5">
+            <headerType>gui</headerType>
+            <jar>configgen-1.0.0.jar</jar>
+            <outfile>QCloudConfigGen.exe</outfile>
+            <jre>
+              <path>.</path>
+              <minVersion>17</minVersion>
+              <jdkPreference>preferJre</jdkPreference>
+            </jre>
+            <sysProperties/>
+            <win32Exe/>
+            <versionInfo>
+              <fileVersion>1.0.0</fileVersion>
+              <productVersion>1.0.0</productVersion>
+              <companyName>QCloud</companyName>
+              <fileDescription>QCloud配置文件生成工具</fileDescription>
+              <productName>QCloudConfigGen</productName>
+            </versionInfo>
+          </launch4j>
+          "@
+          $config | Out-File -Encoding UTF8 launch4j.xml
+
+      - name: Build EXE with Launch4j
+        run: |
+          java -jar launch4j/bin/launch4j.jar launch4j.xml
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
           name: QCloudConfigGen-windows-exe
-          path: dist/QCloudConfigGen.zip
+          path: QCloudConfigGen.exe
