@@ -27,7 +27,8 @@ class TemplateServiceTest {
     void testFillTemplate() {
         TemplateService service = new TemplateService();
         String content = "listen {{port}};";
-        Map<String, String> row = Map.of("port", "8080");
+        Map<String, String> row = new java.util.LinkedHashMap<>();
+        row.put("port", "8080");
         String result = service.fillTemplate(content, row);
         assertEquals("listen 8080;", result);
     }
@@ -36,7 +37,8 @@ class TemplateServiceTest {
     void testFillTemplate_missingKey() {
         TemplateService service = new TemplateService();
         String content = "listen {{port}};";
-        Map<String, String> row = Map.of("other", "8080");
+        Map<String, String> row = new java.util.LinkedHashMap<>();
+        row.put("other", "8080");
         String result = service.fillTemplate(content, row);
         assertEquals("listen {{port}};", result);
     }
