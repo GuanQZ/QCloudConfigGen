@@ -22,9 +22,9 @@ jobs:
       - name: Build with Maven
         run: mvn package -DskipTests -q
 
-      - name: Build Windows EXE with jpackage
+      - name: Build Windows EXE with bundled JRE
         run: |
-          jpackage --type app-image --input target --dest dist --name QCloudConfigGen --main-jar configgen-1.0.0.jar --app-version "1.0.0" --vendor "QCloud"
+          jpackage --type app-image --input target --dest dist --name QCloudConfigGen --main-jar configgen-1.0.0.jar --app-version "1.0.0" --vendor "QCloud" --runtime-image $env:JAVA_HOME
 
       - name: Zip app-image for distribution
         run: |
