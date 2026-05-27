@@ -44,7 +44,7 @@ class TemplateServiceTest {
     @Test
     void testGetBuiltInTemplates() {
         TemplateService service = new TemplateService();
-        var templates = service.getBuiltInTemplates();
+        List<Map<String, String>> templates = service.getBuiltInTemplates();
         assertFalse(templates.isEmpty());
         assertTrue(templates.stream().anyMatch(t -> "nginx".equals(t.get("name"))));
         assertTrue(templates.stream().anyMatch(t -> "spring-cloud-gateway".equals(t.get("name"))));
