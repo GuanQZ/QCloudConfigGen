@@ -22,47 +22,16 @@ jobs:
       - name: Build with Maven
         run: mvn package -DskipTests -q
 
-      - name: Download and extract Launch4j
+      - name: Build Windows EXE with jpackage
         run: |
-          Invoke-WebRequest -Uri "https://sourceforge.net/projects/launch4j/files/launch4j-3.50/launch4j-3.50-windowsamd64.zip/download" -OutFile "launch4j.zip"
-          Expand-Archive -Path "launch4j.zip" -DestinationPath "launch4j" -Force
+          jpackage --type app-image --input target --dest dist --name QCloudConfigGen --main-jar configgen-1.0.0.jar --app-version "1.0.0" --vendor "QCloud"
 
-      - name: Create Launch4j config
+      - name: Create zip for distribution
         run: |
-          $config = @"
-          <launch4j configFileVersion="1.5">
-            <headerType>gui</headerType>
-            <jar>configgen-1.0.0.jar</jar>
-            <outfile>QCloudConfigGen.exe</outfile>
-            <jre>
-              <path>.</path>
-              <minVersion>17</minVersion>
-              <jdkPreference>preferJre</jdkPreference>
-            </jre>
-            <sysProperties/>
-            <win32Exe/>
-            <versionInfo>
-              <fileVersion>1.0.0</fileVersion>
-              <productVersion>1.0.0</productVersion>
-              <companyName>QCloud</companyName>
-              <fileDescription>QCloud配置文件生成工具</fileDescription>
-              <productName>QCloudConfigGen</productName>
-            </versionInfo>
-          </launch4j>
-          "@
-          $config | Out-File -Encoding UTF8 launch4j.xml
-
-      - name: Build EXE with Launch4j
-        run: |
-          Get-ChildItem -Path "launch4j" -Recurse -Filter "*.jar" | Select-Object -First 1 -ExpandProperty FullName
-
-      - name: Build EXE with Launch4j
-        run: |
-          $launch4jJar = Get-ChildItem -Path "launch4j" -Recurse -Filter "launch4j.jar" | Select-Object -First 1
-          java -jar $launch4jJar.FullName launch4j.xml
+          Compress-Archive -Path "dist/QCloudConfigGen" -DestinationPath "dist/QCloudConfigGen.zip" -Force
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
           name: QCloudConfigGen-windows-exe
-          path: QCloudConfigGen.exe
+          path: dist/QCloudConfigGen.zip
