@@ -22,13 +22,9 @@ jobs:
       - name: Build with Maven
         run: mvn package -DskipTests -q
 
-      - name: Create custom JRE with jlink
-        run: |
-          jlink --output runtime-image --add-modules java.base,java.compiler,java.datatransfer,java.desktop,java.instrument,java.logging,java.management,java.naming,java.net.http,java.prefs,java.scripting,java.security.sasl,java.sql.rowset,java.xml.crypto,java.sql,java.xml,java.rmi,java.security.jgss,java.se --strip-debug --compress=2 --no-header-files --no-man-pages
-
       - name: Build Windows EXE with jpackage
         run: |
-          jpackage --type app-image --input target --dest dist --name QCloudConfigGen --main-jar configgen-1.0.0.jar --app-version "1.0.0" --vendor "QCloud" --runtime-image runtime-image
+          jpackage --type app-image --input target --dest dist --name QCloudConfigGen --main-jar configgen-1.0.0.jar --app-version "1.0.0" --vendor "QCloud" --java-options "-Xmx256m"
 
       - name: Zip app-image for distribution
         run: |
